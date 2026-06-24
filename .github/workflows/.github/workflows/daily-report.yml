@@ -1,0 +1,44 @@
+name: Daily Telegram Intelligence Report
+
+on:
+schedule:
+- cron: '30 2 * * *'
+workflow_dispatch:
+
+jobs:
+send-report:
+runs-on: ubuntu-latest
+
+```
+steps:
+  - name: Generate Report
+    run: |
+      PROMPT="Create a Daily Hinglish Intelligence Report.
+
+      IMPORTANT:
+      - Keep under 3000 characters.
+      - Maximum 10 important stories.
+      - Include India, World, AI, Finance, Crypto, Anime, Gaming, Entertainment, Social Media.
+      - Use Hinglish.
+      - Include Gold, Silver, Bitcoin, Ethereum, Sensex, Nifty snapshot.
+      - Avoid rumors."
+
+      RESPONSE=$(curl -s \
+      -H "Content-Type: application/json" \
+      -X POST \
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${{ secrets.GEMINI_API_KEY }}" \
+      -d "{
+        \"contents\": [{
+          \"parts\": [{
+            \"text\": \"$PROMPT\"
+          }]
+        }]
+      }")
+
+      REPORT=$(echo "$RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+
+      curl -s -X POST \
+      "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+      -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+      --data-urlencode text="$REPORT"
+```
